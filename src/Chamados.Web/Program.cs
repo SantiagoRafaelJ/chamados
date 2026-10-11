@@ -19,7 +19,5 @@ if (app.Environment.IsDevelopment())
         Runtime = RuntimeInformation.FrameworkDescription
     });
 }
-
-var teste = new Chamado(" ");
 app.Run();
 
