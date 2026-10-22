@@ -1,20 +1,27 @@
 ﻿@host = http://localhost:5010
 
-POST {{host}}/chamados/ae9bf98d-cc7e-4074-9a76-b0520dd15ba6/atendimento
+POST {{host}}/chamados/8ff4f88b-5baa-4ddb-b56a-893f26edb90b/resolucao
 Content-Type: application/json
 
-{ "responsavel": "Fulano" }
+{ "solucao": " " }
 
 ###
 
-POST {{host}}/chamados/ae9bf98d-cc7e-4074-9a76-b0520dd15ba6/atendimento
+POST {{host}}/chamados/3b605868-0214-4edc-bea7-c8c544cdffb4/cancelamento
 Content-Type: application/json
 
-{ "responsavel": "Fulano" }
+{ "motivo": "Aberto em duplicidade" }
 
 ###
 
-POST {{host}}/chamados/fbd9a99c-61fa-4edd-b301-f186e793db50/atendimento
+POST {{host}}/chamados/6741a381-81f3-4c99-9499-9367cfdd339b/cancelamento
 Content-Type: application/json
 
-{ "responsavel": " " }
+{ "motivo": "Engano" }
+
+###
+
+POST {{host}}/chamados/00000000-0000-0000-0000-000000000000/resolucao
+Content-Type: application/json
+
+{ "solucao": "Qualquer" }

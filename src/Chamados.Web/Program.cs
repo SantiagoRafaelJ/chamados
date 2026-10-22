@@ -54,16 +54,43 @@ app.MapGet("/chamados/{id:guid}", async (Guid id, IChamadoRepositorio repositori
         ? Results.Ok(ResumoChamado.De(chamado))
         : Results.NotFound());
 
-app.MapPost("/chamados/{id:guid}/atendimento", async (
+app.MapPost("/chamados/{id:guid}/atendimento", (
     Guid id,
     IniciarAtendimentoRequest requisicao,
     ChamadoServico servico,
-    CancellationToken cancellationToken) =>
+    CancellationToken cancellationToken)
+    => ExecutarTransicaoAsync(() => servico.IniciarAtendimentoAsync(id, requisicao.Responsavel, cancellationToken)));
+
+app.MapPost("/chamados/{id:guid}/resolucao", (
+    Guid id,
+    ResolverRequest requisicao,
+    ChamadoServico servico,
+    CancellationToken cancellationToken)
+    => ExecutarTransicaoAsync(() => servico.ResolverAsync(id, requisicao.Solucao, cancellationToken)));
+
+app.MapPost("/chamados/{id:guid}/cancelamento", (
+    Guid id,
+    CancelarRequest requisicao,
+    ChamadoServico servico,
+    CancellationToken cancellationToken)
+    => ExecutarTransicaoAsync(() => servico.CancelarAsync(id, requisicao.Motivo, cancellationToken)));
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/ambiente", (IHostEnvironment env) => new
+    {
+        env.EnvironmentName,
+        Runtime = RuntimeInformation.FrameworkDescription
+    });
+}
+
+app.Run();
+
+static async Task<IResult> ExecutarTransicaoAsync(Func<Task<Chamado>> transicao)
 {
     try
     {
-        var chamado = await servico.IniciarAtendimentoAsync(id, requisicao.Responsavel, cancellationToken);
-        return Results.Ok(ResumoChamado.De(chamado));
+        return Results.Ok(ResumoChamado.De(await transicao()));
     }
     catch (ChamadoNaoEncontradoException)
     {
@@ -77,17 +104,10 @@ app.MapPost("/chamados/{id:guid}/atendimento", async (
     {
         return Results.BadRequest(new { erro = ex.Message });
     }
-});
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapGet("/ambiente", (IHostEnvironment env) => new
-    {
-        env.EnvironmentName,
-        Runtime = RuntimeInformation.FrameworkDescription
-    });
 }
 
-app.Run();
-
 public sealed record IniciarAtendimentoRequest(string Responsavel);
+
+public sealed record ResolverRequest(string Solucao);
+
+public sealed record CancelarRequest(string Motivo);
