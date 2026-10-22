@@ -1,0 +1,20 @@
+﻿@host = http://localhost:5010
+
+POST {{host}}/chamados/ae9bf98d-cc7e-4074-9a76-b0520dd15ba6/atendimento
+Content-Type: application/json
+
+{ "responsavel": "Fulano" }
+
+###
+
+POST {{host}}/chamados/ae9bf98d-cc7e-4074-9a76-b0520dd15ba6/atendimento
+Content-Type: application/json
+
+{ "responsavel": "Fulano" }
+
+###
+
+POST {{host}}/chamados/fbd9a99c-61fa-4edd-b301-f186e793db50/atendimento
+Content-Type: application/json
+
+{ "responsavel": " " }
