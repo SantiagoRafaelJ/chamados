@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>Indicadores agregados da base de chamados.</summary>
 public sealed record EstatisticasChamados(

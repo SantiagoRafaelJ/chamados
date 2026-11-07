@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 
 namespace Chamados.Domain;
 
@@ -55,6 +55,7 @@ public sealed class RepositorioChamadosEmMemoria(TimeProvider relogio, TimeSpan 
     {
         if (latenciaSimulada > TimeSpan.Zero)
         {
+            // Task.Delay com TimeProvider: em testes, um relógio falso controla a espera.
             return Task.Delay(latenciaSimulada, relogio, cancellationToken);
         }
 

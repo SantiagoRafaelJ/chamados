@@ -1,15 +1,17 @@
 namespace Chamados.Domain;
 
-public enum StatusChamado
-{
-    Aberto,
-    EmAtendimento,
-    Resolvido,
-    Cancelado
-}
-
+/// <summary>
+/// Solicitação de serviço registrada no sistema.
+/// O ciclo de vida só avança pelos métodos públicos, que garantem
+/// as transições permitidas e registram o histórico.
+/// </summary>
 public sealed class Chamado
 {
+    // Limites da regra de negócio. O formulário web reusa estas constantes
+    // nos atributos de validação: uma única fonte de verdade.
+    public const int TamanhoMaximoTitulo = 120;
+    public const int TamanhoMaximoDescricao = 2000;
+
     private readonly List<RegistroHistorico> _historico = [];
 
     public Chamado(
@@ -19,31 +21,62 @@ public sealed class Chamado
         DateTimeOffset? criadoEm = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(titulo);
-        Titulo = titulo.Trim();
-        Descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+
+        titulo = titulo.Trim();
+        descricao = string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
+
+        if (titulo.Length > TamanhoMaximoTitulo)
+        {
+            throw new ArgumentException($"O título deve ter no máximo {TamanhoMaximoTitulo} caracteres.", nameof(titulo));
+        }
+
+        if (descricao?.Length > TamanhoMaximoDescricao)
+        {
+            throw new ArgumentException($"A descrição deve ter no máximo {TamanhoMaximoDescricao} caracteres.", nameof(descricao));
+        }
+
+        // Um enum aceita qualquer inteiro: (Prioridade)99 compila e chega pelo formulário.
+        if (!Enum.IsDefined(prioridade))
+        {
+            throw new ArgumentOutOfRangeException(nameof(prioridade), prioridade, "Prioridade inexistente.");
+        }
+
+        Titulo = titulo;
+        Descricao = descricao;
         Prioridade = prioridade;
         CriadoEm = criadoEm ?? DateTimeOffset.UtcNow;
     }
 
     public Guid Id { get; } = Guid.NewGuid();
+
     public string Titulo { get; }
+
     public string? Descricao { get; }
+
     public Prioridade Prioridade { get; }
+
     public StatusChamado Status { get; private set; } = StatusChamado.Aberto;
+
     public string? Responsavel { get; private set; }
+
     public string? Solucao { get; private set; }
+
     public DateTimeOffset CriadoEm { get; }
+
     public DateTimeOffset? EncerradoEm { get; private set; }
 
+    // AsReadOnly impede que quem recebe a lista faça cast para List<T> e a altere.
     public IReadOnlyList<RegistroHistorico> Historico => _historico.AsReadOnly();
 
     public bool EstaEncerrado => Status is StatusChamado.Resolvido or StatusChamado.Cancelado;
 
+    // DateTimeOffset? - DateTimeOffset resulta em TimeSpan? (nulo enquanto aberto).
     public TimeSpan? TempoAteEncerramento => EncerradoEm - CriadoEm;
 
     public void IniciarAtendimento(string responsavel, DateTimeOffset em)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(responsavel);
+
         var nome = responsavel.Trim();
         MudarStatus(StatusChamado.EmAtendimento, em, $"Atribuído a {nome}");
         Responsavel = nome;
@@ -52,6 +85,7 @@ public sealed class Chamado
     public void Resolver(string solucao, DateTimeOffset em)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(solucao);
+
         var texto = solucao.Trim();
         MudarStatus(StatusChamado.Resolvido, em, texto);
         Solucao = texto;
@@ -61,6 +95,7 @@ public sealed class Chamado
     public void Cancelar(string motivo, DateTimeOffset em)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(motivo);
+
         MudarStatus(StatusChamado.Cancelado, em, motivo.Trim());
         EncerradoEm = em;
     }

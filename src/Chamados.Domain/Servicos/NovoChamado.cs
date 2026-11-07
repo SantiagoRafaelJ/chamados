@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>Dados necessários para abrir um chamado.</summary>
 public sealed record NovoChamado(

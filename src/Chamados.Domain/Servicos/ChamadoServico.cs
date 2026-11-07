@@ -1,5 +1,9 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
+/// <summary>
+/// Casos de uso dos chamados. Depende de abstrações recebidas por injeção:
+/// o repositório (onde guardar) e o relógio (que horas são).
+/// </summary>
 public sealed class ChamadoServico(IChamadoRepositorio repositorio, TimeProvider relogio)
 {
     public async Task<Chamado> AbrirAsync(NovoChamado comando, CancellationToken cancellationToken = default)
@@ -10,6 +14,10 @@ public sealed class ChamadoServico(IChamadoRepositorio repositorio, TimeProvider
         await repositorio.AdicionarAsync(chamado, cancellationToken);
         return chamado;
     }
+
+    /// <summary>Consulta um chamado. Devolve null quando o Id não existe.</summary>
+    public Task<Chamado?> ObterAsync(Guid id, CancellationToken cancellationToken = default)
+        => repositorio.ObterAsync(id, cancellationToken);
 
     public Task<Chamado> IniciarAtendimentoAsync(Guid id, string responsavel, CancellationToken cancellationToken = default)
         => AlterarAsync(id, chamado => chamado.IniciarAtendimento(responsavel, relogio.GetUtcNow()), cancellationToken);
@@ -32,8 +40,8 @@ public sealed class ChamadoServico(IChamadoRepositorio repositorio, TimeProvider
             .Where(c => filtro.Status is null || c.Status == filtro.Status)
             .Where(c => filtro.PrioridadeMinima is null || c.Prioridade >= filtro.PrioridadeMinima)
             .Where(c => string.IsNullOrWhiteSpace(filtro.Texto)
-                || c.Titulo.Contains(filtro.Texto, StringComparison.OrdinalIgnoreCase)
-                || (c.Descricao?.Contains(filtro.Texto, StringComparison.OrdinalIgnoreCase) ?? false))
+                        || c.Titulo.Contains(filtro.Texto, StringComparison.OrdinalIgnoreCase)
+                        || (c.Descricao?.Contains(filtro.Texto, StringComparison.OrdinalIgnoreCase) ?? false))
             .OrderByDescending(c => c.Prioridade)
             .ThenBy(c => c.CriadoEm)
             .Select(ResumoChamado.De)
@@ -44,9 +52,11 @@ public sealed class ChamadoServico(IChamadoRepositorio repositorio, TimeProvider
     {
         var chamados = await repositorio.ListarAsync(cancellationToken);
 
+        // Todos os status aparecem, mesmo com zero: parte do enum, não dos dados.
         var porStatus = Enum.GetValues<StatusChamado>()
             .ToDictionary(status => status, status => chamados.Count(c => c.Status == status));
 
+        // Só as prioridades presentes aparecem: GroupBy agrupa o que existe.
         var porPrioridade = chamados
             .GroupBy(c => c.Prioridade)
             .ToDictionary(grupo => grupo.Key, grupo => grupo.Count());

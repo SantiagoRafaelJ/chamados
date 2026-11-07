@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 public sealed class ChamadoNaoEncontradoException(Guid chamadoId)
     : Exception($"Chamado {chamadoId} não encontrado.")

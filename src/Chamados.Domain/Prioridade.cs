@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>
 /// Urgência do chamado. Os valores explícitos tornam a ordenação

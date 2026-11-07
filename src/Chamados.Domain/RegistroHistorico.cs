@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>
 /// Uma transição de status já ocorrida. Imutável: o passado não muda.

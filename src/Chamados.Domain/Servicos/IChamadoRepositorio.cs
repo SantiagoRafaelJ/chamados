@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>
 /// Contrato de armazenamento de chamados. Existe porque a implementação

@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>Projeção de leitura de um chamado, usada em listagens.</summary>
 public sealed record ResumoChamado(

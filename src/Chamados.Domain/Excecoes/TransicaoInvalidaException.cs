@@ -1,9 +1,9 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>
 /// Tentativa de mover o chamado para um status não permitido a partir do atual.
 /// Deriva de InvalidOperationException: a operação é inválida para o estado do objeto.
-/// </summary>S
+/// </summary>
 public sealed class TransicaoInvalidaException(Guid chamadoId, StatusChamado atual, StatusChamado pretendido)
     : InvalidOperationException($"O chamado {chamadoId} não pode passar de {atual} para {pretendido}.")
 {

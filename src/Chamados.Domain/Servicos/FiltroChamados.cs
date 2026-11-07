@@ -1,4 +1,4 @@
-﻿namespace Chamados.Domain;
+namespace Chamados.Domain;
 
 /// <summary>
 /// Critérios de consulta. Imutável: para variar um critério,
