@@ -1,0 +1,29 @@
+<div class="filtro-prioridade" role="group" aria-label="Filtrar por prioridade mínima">
+    <button type="button"
+            class="@(Valor is null ? "selecionado" : "secundario")"
+            aria-pressed="@(Valor is null ? "true" : "false")"
+            @onclick="() => Escolher(null)">Todas</button>
+    <button type="button"
+            class="@(Valor == Prioridade.Media ? "selecionado" : "secundario")"
+            aria-pressed="@(Valor == Prioridade.Media ? "true" : "false")"
+            @onclick="() => Escolher(Prioridade.Media)">Média ou mais</button>
+    <button type="button"
+            class="@(Valor == Prioridade.Alta ? "selecionado" : "secundario")"
+            aria-pressed="@(Valor == Prioridade.Alta ? "true" : "false")"
+            @onclick="() => Escolher(Prioridade.Alta)">Alta ou mais</button>
+    <button type="button"
+            class="@(Valor == Prioridade.Critica ? "selecionado" : "secundario")"
+            aria-pressed="@(Valor == Prioridade.Critica ? "true" : "false")"
+            @onclick="() => Escolher(Prioridade.Critica)">Crítica</button>
+</div>
+
+@code {
+    [Parameter]
+    public Prioridade? Valor { get; set; }
+
+    [Parameter]
+    public EventCallback<Prioridade?> ValorChanged { get; set; }
+
+    private Task Escolher(Prioridade? prioridade)
+        => ValorChanged.InvokeAsync(prioridade);
+}
