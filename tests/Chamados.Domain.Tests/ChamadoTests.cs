@@ -124,4 +124,154 @@ public class ChamadoTests
 
         Assert.False(chamado.Historico is List<RegistroHistorico>);
     }
+
+    // --- Módulo 3: limites que o formulário web também exibe ---
+
+    [Fact]
+    public void NovoChamado_TituloAcimaDoLimite_LancaArgumentException()
+    {
+        var titulo = new string('a', Chamado.TamanhoMaximoTitulo + 1);
+
+        var erro = Assert.Throws<ArgumentException>(() => new Chamado(titulo));
+        Assert.Equal("titulo", erro.ParamName);
+    }
+
+    [Fact]
+    public void NovoChamado_TituloNoLimiteComEspacosNasPontas_EhAceito()
+    {
+        // O limite vale para o texto já sem espaços: o Trim acontece antes da verificação.
+        var titulo = "  " + new string('a', Chamado.TamanhoMaximoTitulo) + "  ";
+
+        var chamado = new Chamado(titulo);
+
+        Assert.Equal(Chamado.TamanhoMaximoTitulo, chamado.Titulo.Length);
+    }
+
+    [Fact]
+    public void NovoChamado_DescricaoAcimaDoLimite_LancaArgumentException()
+    {
+        var descricao = new string('a', Chamado.TamanhoMaximoDescricao + 1);
+
+        Assert.Throws<ArgumentException>(() => new Chamado("Tomada solta", descricao: descricao));
+    }
+
+    [Fact]
+    public void NovoChamado_PrioridadeInexistente_LancaArgumentOutOfRange()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Chamado("Tomada solta", (Prioridade)99));
+    }
+
+    // --- Módulo 4: edição e versão ---
+
+    [Fact]
+    public void NovoChamado_NasceNaVersao1()
+    {
+        Assert.Equal(1, new Chamado("Tomada solta").Versao);
+    }
+
+    [Fact]
+    public void Editar_AlteraDadosEIncrementaVersao()
+    {
+        var chamado = new Chamado("Tomada solta", Prioridade.Baixa, criadoEm: Abertura);
+
+        chamado.Editar("  Tomada solta na recepção  ", Prioridade.Alta, "Perto da porta");
+
+        Assert.Equal("Tomada solta na recepção", chamado.Titulo);
+        Assert.Equal(Prioridade.Alta, chamado.Prioridade);
+        Assert.Equal("Perto da porta", chamado.Descricao);
+        Assert.Equal(2, chamado.Versao);
+    }
+
+    [Fact]
+    public void Editar_TituloInvalido_NaoAlteraNada()
+    {
+        var chamado = new Chamado("Tomada solta", Prioridade.Baixa, "Original");
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => chamado.Editar("Título válido", (Prioridade)99, "Nova"));
+
+        Assert.Equal("Tomada solta", chamado.Titulo);
+        Assert.Equal("Original", chamado.Descricao);
+        Assert.Equal(1, chamado.Versao);
+    }
+
+    [Fact]
+    public void Editar_ChamadoResolvido_LancaChamadoEncerrado()
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+        chamado.IniciarAtendimento("Elétrica", Abertura.AddHours(1));
+        chamado.Resolver("Tomada fixada", Abertura.AddHours(2));
+
+        var erro = Assert.Throws<ChamadoEncerradoException>(() => chamado.Editar("Outro título", Prioridade.Alta, null));
+
+        Assert.Equal(StatusChamado.Resolvido, erro.Status);
+    }
+
+    [Fact]
+    public void TransicaoDeStatus_TambemIncrementaVersao()
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+
+        chamado.IniciarAtendimento("Elétrica", Abertura.AddHours(1));
+
+        Assert.Equal(2, chamado.Versao);
+    }
+
+    [Fact]
+    public void Reabrir_ResolvidoDentroDoPrazo_RetornaParaAberto()
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+        chamado.IniciarAtendimento("Elétrica", Abertura.AddHours(1));
+        chamado.Resolver("Tomada fixada", Abertura.AddHours(2));
+        var versao = chamado.Versao;
+
+        chamado.Reabrir("Problema reapareceu", Abertura.AddHours(2).AddDays(7));
+
+        Assert.Equal(StatusChamado.Aberto, chamado.Status);
+        Assert.Null(chamado.Responsavel);
+        Assert.Null(chamado.Solucao);
+        Assert.Null(chamado.EncerradoEm);
+        Assert.Equal(versao + 1, chamado.Versao);
+        Assert.Equal("Problema reapareceu", chamado.Historico[^1].Observacao);
+    }
+
+    [Fact]
+    public void Reabrir_AposPrazo_LancaPrazoExpiradoSemAlterar()
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+        chamado.IniciarAtendimento("Elétrica", Abertura.AddHours(1));
+        var encerramento = Abertura.AddHours(2);
+        chamado.Resolver("Tomada fixada", encerramento);
+
+        var erro = Assert.Throws<PrazoReaberturaExpiradoException>(
+            () => chamado.Reabrir("Problema reapareceu", encerramento.AddDays(7).AddTicks(1)));
+
+        Assert.Equal(encerramento.AddDays(7), erro.Limite);
+        Assert.Equal(StatusChamado.Resolvido, chamado.Status);
+        Assert.Equal(3, chamado.Versao);
+    }
+
+    [Theory]
+    [InlineData(StatusChamado.Aberto)]
+    [InlineData(StatusChamado.Cancelado)]
+    public void Reabrir_StatusDiferenteDeResolvido_LancaTransicaoInvalida(StatusChamado statusInicial)
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+        if (statusInicial == StatusChamado.Cancelado)
+        {
+            chamado.Cancelar("Cancelado por engano", Abertura.AddHours(1));
+        }
+
+        Assert.Throws<TransicaoInvalidaException>(
+            () => chamado.Reabrir("Reabrir", Abertura.AddHours(2)));
+    }
+
+    [Fact]
+    public void Reabrir_MotivoEmBranco_LancaArgumentException()
+    {
+        var chamado = new Chamado("Tomada solta", criadoEm: Abertura);
+        chamado.IniciarAtendimento("Elétrica", Abertura.AddHours(1));
+        chamado.Resolver("Tomada fixada", Abertura.AddHours(2));
+
+        Assert.Throws<ArgumentException>(() => chamado.Reabrir("  ", Abertura.AddHours(3)));
+    }
 }
