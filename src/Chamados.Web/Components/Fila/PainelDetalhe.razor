@@ -1,0 +1,80 @@
+@inject ChamadoServico Servico
+
+<aside class="painel-detalhe" aria-live="polite">
+    <header>
+        <h2>Detalhes</h2>
+        <button type="button" class="secundario" aria-label="Fechar detalhes" @onclick="Fechar">Fechar</button>
+    </header>
+
+    @if (carregando)
+    {
+        <p class="vazio">Carregando…</p>
+    }
+    else if (chamado is null)
+    {
+        <p class="aviso-erro" role="alert">O chamado não foi encontrado.</p>
+    }
+    else
+    {
+        <h3>@chamado.Titulo</h3>
+        <p><strong>Status:</strong> @chamado.Status.Rotulo()</p>
+        <p>@(chamado.Descricao ?? "Sem descrição.")</p>
+
+        <h4>Histórico</h4>
+        @if (chamado.Historico.Count == 0)
+        {
+            <p class="apoio">Nenhuma alteração registrada.</p>
+        }
+        else
+        {
+            <ol class="historico-detalhe">
+                @foreach (var registro in chamado.Historico.OrderByDescending(h => h.Em))
+                {
+                    <li>
+                        <strong>@registro.De.Rotulo() → @registro.Para.Rotulo()</strong>
+                        @if (!string.IsNullOrWhiteSpace(registro.Observacao))
+                        {
+                            <span>@registro.Observacao</span>
+                        }
+                        <time datetime="@registro.Em.ToUniversalTime().ToString("O")">@registro.Em.DataHora()</time>
+                    </li>
+                }
+            </ol>
+        }
+    }
+</aside>
+
+@code {
+    private Chamado? chamado;
+    private bool carregando;
+    private Guid ultimoChamadoId;
+    private int ultimaRevisao;
+
+    [Parameter, EditorRequired]
+    public Guid ChamadoId { get; set; }
+
+    [Parameter]
+    public int Revisao { get; set; }
+
+    [Parameter]
+    public EventCallback AoFechar { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ChamadoId == ultimoChamadoId && Revisao == ultimaRevisao)
+        {
+            return;
+        }
+
+        ultimoChamadoId = ChamadoId;
+        ultimaRevisao = Revisao;
+        carregando = true;
+        StateHasChanged();
+        await Task.Yield();
+
+        chamado = await Servico.ObterAsync(ChamadoId);
+        carregando = false;
+    }
+
+    private Task Fechar() => AoFechar.InvokeAsync();
+}
