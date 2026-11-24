@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Chamados.Domain;
 using Chamados.Web;
 using Chamados.Web.Api;
+using Chamados.Web.Components;
 using Chamados.Web.Configuracao;
 using Microsoft.Extensions.Options;
 
@@ -40,6 +41,10 @@ builder.Services.AddRazorPages()
         mensagens.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
     });
 builder.Services.AddProblemDetails();
+
+// Blazor: componentes Razor renderizados no servidor, com interatividade por conexão (SignalR).
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -71,14 +76,29 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Respostas de erro sem corpo (404 de rota inexistente, NotFound() de uma página, 400)
+// são reexecutadas em /Erro/{código}, com o layout do site. Só fora de /api:
+// a API continua respondendo JSON, nunca HTML.
+app.UseWhen(
+    contexto => !contexto.Request.Path.StartsWithSegments("/api"),
+    ramo => ramo.UseStatusCodePagesWithReExecute("/Erro/{0}"));
+
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// Exigido pelos endpoints de componentes Razor: confere o token dos formulários Blazor.
+// As Razor Pages continuam validando o próprio token como antes.
+app.UseAntiforgery();
 
 // ============ 3. Endpoints: quem responde a cada rota ============
 
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.MapApiChamados();
+
+// Páginas Blazor (componentes com @page), convivendo com as Razor Pages na mesma aplicação.
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 app.MapGet("/api/status", () => Enum.GetNames<StatusChamado>());
 

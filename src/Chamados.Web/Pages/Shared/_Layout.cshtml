@@ -9,7 +9,11 @@
 <body>
     <header class="topo">
         <a class="marca" asp-page="/Index">Chamados</a>
+        @* View Component: tem lógica e dependências próprias, ao contrário de uma partial. *@
+        <vc:resumo-status />
         <nav>
+            @* Página Blazor (Módulo 5): link comum, porque não é uma Razor Page. *@
+            <a href="/atendimento">Atendimento</a>
             <a asp-page="/Chamados/Index">Lista</a>
             <a class="botao" asp-page="/Chamados/Novo">Novo chamado</a>
         </nav>
@@ -25,6 +29,9 @@
         @RenderBody()
     </main>
 
-    <footer class="rodape">Chamados · Módulo 3 · ASP.NET Core e Razor Pages</footer>
+    <footer class="rodape">Chamados · Módulo 5 · Blazor e componentes Razor</footer>
+
+    @* Cada página pode acrescentar scripts aqui com @section Scripts { ... }. *@
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
