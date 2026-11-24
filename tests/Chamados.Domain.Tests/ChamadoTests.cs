@@ -274,4 +274,15 @@ public class ChamadoTests
 
         Assert.Throws<ArgumentException>(() => chamado.Reabrir("  ", Abertura.AddHours(3)));
     }
+
+    [Theory]
+    [InlineData(Prioridade.Critica, 4)]
+    [InlineData(Prioridade.Alta, 8)]
+    [InlineData(Prioridade.Media, 24)]
+    [InlineData(Prioridade.Baixa, 72)]
+    public void PrazoAtendimento_Para_Prioridade_DevolvePrazo(Prioridade prioridade, int horas)
+    {
+        Assert.Equal(TimeSpan.FromHours(horas), PrazoAtendimento.Para(prioridade));
+        Assert.Equal(Abertura.AddHours(horas), PrazoAtendimento.VenceEm(Abertura, prioridade));
+    }
 }
