@@ -11,7 +11,6 @@ public sealed class Chamado
     // nos atributos de validação: uma única fonte de verdade.
     public const int TamanhoMaximoTitulo = 120;
     public const int TamanhoMaximoDescricao = 2000;
-    public static readonly TimeSpan PrazoReabertura = TimeSpan.FromDays(7);
 
     private readonly List<RegistroHistorico> _historico = [];
 
@@ -106,27 +105,6 @@ public sealed class Chamado
         EncerradoEm = em;
     }
 
-    public void Reabrir(string motivo, DateTimeOffset em)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(motivo);
-
-        if (Status != StatusChamado.Resolvido)
-        {
-            throw new TransicaoInvalidaException(Id, Status, StatusChamado.Aberto);
-        }
-
-        var limite = EncerradoEm!.Value.Add(PrazoReabertura);
-        if (em > limite)
-        {
-            throw new PrazoReaberturaExpiradoException(Id, limite);
-        }
-
-        MudarStatus(StatusChamado.Aberto, em, motivo.Trim());
-        Responsavel = null;
-        Solucao = null;
-        EncerradoEm = null;
-    }
-
     private void MudarStatus(StatusChamado novo, DateTimeOffset em, string? observacao)
     {
         if (!TransicaoPermitida(Status, novo))
@@ -181,7 +159,6 @@ public sealed class Chamado
         (StatusChamado.Aberto, StatusChamado.EmAtendimento) => true,
         (StatusChamado.EmAtendimento, StatusChamado.Resolvido) => true,
         (StatusChamado.Aberto or StatusChamado.EmAtendimento, StatusChamado.Cancelado) => true,
-        (StatusChamado.Resolvido, StatusChamado.Aberto) => true,
         _ => false
     };
 }

@@ -250,17 +250,4 @@ public class ChamadoServicoTests
 
         Assert.Equal("Chamado 03", lista[0].Titulo);
     }
-
-    [Fact]
-    public async Task ReabrirAsync_DentroDoPrazo_UsaRelogioEAbertaChamado()
-    {
-        var chamado = await _servico.AbrirAsync(new NovoChamado("Tomada solta"));
-        await _servico.IniciarAtendimentoAsync(chamado.Id, "Elétrica");
-        await _servico.ResolverAsync(chamado.Id, "Tomada fixada");
-
-        _relogio.Avancar(TimeSpan.FromDays(7));
-        var reaberto = await _servico.ReabrirAsync(chamado.Id, "Problema reapareceu");
-
-        Assert.Equal(StatusChamado.Aberto, reaberto.Status);
-    }
 }

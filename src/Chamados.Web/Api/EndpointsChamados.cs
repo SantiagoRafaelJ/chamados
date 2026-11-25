@@ -42,14 +42,8 @@ public static class EndpointsChamados
                 ChamadoServico servico, CancellationToken cancellationToken)
             => ResumoChamado.De(await servico.IniciarAtendimentoAsync(id, requisicao.Responsavel, cancellationToken)));
 
-        api.MapPost("/{id:guid}/reabertura", async (Guid id, ReabrirChamadoRequest requisicao,
-                ChamadoServico servico, CancellationToken cancellationToken)
-            => ResumoChamado.De(await servico.ReabrirAsync(id, requisicao.Motivo, cancellationToken)));
-
         return api;
     }
 }
 
 public sealed record IniciarAtendimentoRequest(string Responsavel);
-
-public sealed record ReabrirChamadoRequest(string Motivo);
